@@ -2,11 +2,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const LOOTLOG_DIR = path.join(os.homedir(), ".lootlog");
-const QUEUE_FILE = path.join(LOOTLOG_DIR, "queue.json");
-const CONFIG_FILE = path.join(LOOTLOG_DIR, "config.json");
+export const LOOTLOG_DIR = path.join(os.homedir(), ".lootlog");
+export const QUEUE_FILE = path.join(LOOTLOG_DIR, "queue.json");
+export const CONFIG_FILE = path.join(LOOTLOG_DIR, "config.json");
 
-function defaultDownloadDir(): string {
+export function defaultDownloadDir(): string {
   if (process.platform === "win32") {
     const baseDirectory = process.env.USERPROFILE || os.homedir();
 
@@ -43,18 +43,10 @@ function defaultDownloadDir(): string {
   return path.join(os.homedir(), "Downloads", "Lootlog");
 }
 
-function ensureDirs(downloadDirectory?: string): void {
+export function ensureDirs(downloadDirectory?: string): void {
   fs.mkdirSync(LOOTLOG_DIR, { recursive: true });
 
   if (downloadDirectory) {
     fs.mkdirSync(downloadDirectory, { recursive: true });
   }
 }
-
-export {
-  LOOTLOG_DIR,
-  QUEUE_FILE,
-  CONFIG_FILE,
-  defaultDownloadDir,
-  ensureDirs,
-};

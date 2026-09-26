@@ -1,10 +1,11 @@
 {
   "name": "lootlog",
   "version": "1.0.0",
-  "description": "",
+  "description": "A command line interface for downloading YouTube videos using the yt-dlp engine",
   "main": "index.js",
   "scripts": {
     "build": "npx tsc",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -1,11 +1,26 @@
 import { Command } from "commander";
 import { boxCommand } from "./commands/box";
+import { createDatabase } from "../database/db";
+import { DownloadRepository } from "../database/repositories/download";
+import { YtDlpEngine } from "../config/yt-dlp";
+import { DownloadManager } from "../config/download";
+
+const database = createDatabase();
+
 
 const program = new Command();
 
+const downloadRepository = new DownloadRepository(database);
+const downloadEngine = new YtDlpEngine();
+
+const downloadManager = new DownloadManager(
+  downloadEngine,
+  downloadRepository
+);
+
 program
     .name("lootlog")
-    .description("A command line YouTube download manager")
+    .description("A command line YouTube downloamd manager")
     .version("0.1.0");
 
 program
@@ -14,7 +29,13 @@ program
     .option("-o, --output <directory>", "Download directory")
     .option('-a, --audio', 'download audio only and convert to MP3')
     .option('--playlist', 'download every video in the playlist')
-    .action(boxCommand)
+    .action((url, options) => {
+    return boxCommand(
+      url,
+      options,
+      downloadManager
+    );
+  });
 
 program
   .command("list")
@@ -36,4 +57,6 @@ program
   .command("info <id>")
   .description("Show download details");
 
-program.parse();
+program.parseAsync();
+
+database.close();

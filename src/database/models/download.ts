@@ -1,0 +1,16 @@
+export enum DownloadStatus {
+  PENDING = "PENDING",
+  DOWNLOADING = "DOWNLOADING",
+  PAUSED = "PAUSED",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+  FAILED = "FAILED",
+}
+
+export interface Download {
+  id: string;
+  url: string;
+  name: string;
+  status: DownloadStatus;
+  createdAt: Date;
+}

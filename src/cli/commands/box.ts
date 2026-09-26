@@ -5,7 +5,7 @@ import {
   ensureDirs,
 } from "../../config/path";
 
-import { YtDlpEngine } from "../../config/yt-dlp";
+import { DownloadManager } from "../../config/download";
 
 interface BoxOptions {
   output?: string;
@@ -13,32 +13,20 @@ interface BoxOptions {
   playlist?: boolean;
 }
 
-export async function boxCommand(url: string, options: BoxOptions): Promise<void> {
+export async function boxCommand(url: string, options: BoxOptions, downloadManager: DownloadManager): Promise<void> {
   if (!/^https?:\/\//.test(url)) {
-    console.error(
-      "Error: provide a valid HTTP(S) URL."
-    );
+    console.error("Error: provide a valid HTTP(S) URL.");
 
     process.exitCode = 1;
     return;
   }
 
-  const downloadDirectory = path.resolve(
-    options.output || defaultDownloadDir()
-  );
+  const downloadDirectory = path.resolve(options.output || defaultDownloadDir());
 
   try {
     ensureDirs(downloadDirectory);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unknown error";
-
-    console.error(
-      `Error: cannot create destination directory: ${message}`
-    );
-
+    console.error(`Error: cannot create destination directory: ${error}`);
     process.exitCode = 1;
     return;
   }
@@ -54,22 +42,16 @@ export async function boxCommand(url: string, options: BoxOptions): Promise<void
     console.log("Mode: playlist");
   }
 
-  const downloadEngine = new YtDlpEngine();
-
-    try {
-    await downloadEngine.download(url, {
-        outputDirectory: downloadDirectory,
-        audioOnly: options.audio,
-        playlist: options.playlist,
+  try {
+    await downloadManager.download({
+      url,
+      name: url,
+      outputDirectory: downloadDirectory,
+      audioOnly: options.audio,
+      playlist: options.playlist,
     });
-    } catch (error) {
-    const message =
-        error instanceof Error
-        ? error.message
-        : "Unknown error";
-
-    console.error(`Error: ${message}`);
-
+  } catch (error) {
+    console.error(`Error downloading file: ${error}`);
     process.exitCode = 1;
-    }
+  }
 }

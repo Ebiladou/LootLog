@@ -1,7 +1,7 @@
 import { Command } from "commander";
 
 import { boxCommand } from "./commands/box";
-import { ListCommand } from "./commands/list";
+import { listCommand } from "./commands/list";
 
 import { createDatabase } from "../database/db";
 import { DownloadRepository } from "../database/repositories/download";
@@ -45,19 +45,16 @@ async function main(): Promise<void> {
     .description("List downloads")
     .option("-s, --status <status>", "Download status")
     .action((options) => {
-      return ListCommand(
+      return listCommand(
         downloadRepository,
         options.status
       );
     });
 
   program
-    .command("paused")
-    .description("List paused downloads");
-
-  program
     .command("resume <id>")
-    .description("Resume a download");
+    .description("Resume a download")
+    .action(() => {});
 
   program
     .command("cancel <id>")

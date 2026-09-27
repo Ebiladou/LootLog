@@ -92,6 +92,23 @@ export class DownloadRepository {
     return rows.map((row) => this.toDownload(row));
   }
 
+  findByIdAndStatus(id: string, status: DownloadStatus): Download | undefined {
+    const statement = this.database.prepare(`
+      SELECT
+        id,
+        url,
+        name,
+        status,
+        created_at
+      FROM downloads
+      WHERE id = ? AND status = ?
+    `);
+
+    const row = statement.get(id, status) as DownloadRow | undefined;
+
+    return row ? this.toDownload(row) : undefined;
+}
+
   updateStatus(
     id: string,
     status: DownloadStatus

@@ -1,7 +1,7 @@
 import { DownloadRepository } from "../../database/repositories/download";
 import { DownloadStatus } from "../../database/models/download";
 
-export async function ListCommand(repository: DownloadRepository, status?: string): Promise<void> {
+export async function listCommand(repository: DownloadRepository, status?: string): Promise<void> {
   try {
     let downloads;
 
@@ -9,14 +9,12 @@ export async function ListCommand(repository: DownloadRepository, status?: strin
       downloads = repository.findAll();
     } else {
       const normalizedStatus = status.toUpperCase();
-
       if (!Object.values(DownloadStatus).includes(normalizedStatus as DownloadStatus)) {
         console.error("Error: Invalid status entered");
         return;
       }
 
       const downloadStatus = normalizedStatus as DownloadStatus;
-
       downloads = repository.findByStatus(downloadStatus);
     }
 

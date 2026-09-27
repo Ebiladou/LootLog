@@ -1,10 +1,5 @@
 import path from "node:path";
-
-import {
-  defaultDownloadDir,
-  ensureDirs,
-} from "../../config/path";
-
+import {defaultDownloadDir, ensureDirs} from "../../config/path";
 import { DownloadManager } from "../../config/download";
 
 interface BoxOptions {
@@ -45,7 +40,6 @@ export async function boxCommand(url: string, options: BoxOptions, downloadManag
   try {
     await downloadManager.download({
       url,
-      name: url,
       outputDirectory: downloadDirectory,
       audioOnly: options.audio,
       playlist: options.playlist,

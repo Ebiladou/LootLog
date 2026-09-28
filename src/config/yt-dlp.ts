@@ -40,7 +40,7 @@ export class YtDlpEngine {
   async download(url: string, options: DownloadOptions): Promise<void> {
     const argumentsList = [
       "--continue",
-      "--no-playlist",
+      options.playlist ? "--yes-playlist" : "--no-playlist",
       "-P",
       options.outputDirectory,
     ];
@@ -49,12 +49,8 @@ export class YtDlpEngine {
       argumentsList.push("-x", "--audio-format", "mp3");
     }
 
-    if (options.playlist) {
-      const noPlaylistIndex = argumentsList.indexOf("--no-playlist"); // for playlist, why don't we just use the --yes-playlist command?
-      argumentsList.splice(noPlaylistIndex, 1);
-    }
-
     argumentsList.push(url);
+
     await this.run(argumentsList);
   }
 
@@ -70,6 +66,7 @@ export class YtDlpEngine {
   private run(argumentsList: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       this.stopped = false;
+
       this.process = spawn("yt-dlp", argumentsList, {
         stdio: "inherit",
       });

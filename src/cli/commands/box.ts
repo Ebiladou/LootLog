@@ -1,5 +1,5 @@
 import path from "node:path";
-import {defaultDownloadDir, ensureDirs} from "../../config/path";
+import { defaultDownloadDir, ensureDirs } from "../../config/path";
 import { DownloadManager } from "../../config/download";
 
 interface BoxOptions {
@@ -8,7 +8,11 @@ interface BoxOptions {
   playlist?: boolean;
 }
 
-export async function boxCommand(url: string, options: BoxOptions, downloadManager: DownloadManager): Promise<void> {
+export async function boxCommand(
+  url: string,
+  options: BoxOptions,
+  downloadManager: DownloadManager,
+): Promise<void> {
   if (!/^https?:\/\//.test(url)) {
     console.error("Error: provide a valid HTTP(S) URL.");
 
@@ -16,7 +20,9 @@ export async function boxCommand(url: string, options: BoxOptions, downloadManag
     return;
   }
 
-  const downloadDirectory = path.resolve(options.output || defaultDownloadDir());
+  const downloadDirectory = path.resolve(
+    options.output || defaultDownloadDir(),
+  );
 
   try {
     ensureDirs(downloadDirectory);

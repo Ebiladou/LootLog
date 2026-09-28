@@ -20,20 +20,18 @@ export function defaultDownloadDir(): string {
   const xdgUserDirectoriesFile = path.join(
     os.homedir(),
     ".config",
-    "user-dirs.dirs"
+    "user-dirs.dirs",
   );
 
   if (fs.existsSync(xdgUserDirectoriesFile)) {
     const config = fs.readFileSync(xdgUserDirectoriesFile, "utf-8");
 
-    const downloadsMatch = config.match(
-      /^XDG_DOWNLOAD_DIR="(.+)"$/m
-    );
+    const downloadsMatch = config.match(/^XDG_DOWNLOAD_DIR="(.+)"$/m);
 
     if (downloadsMatch) {
       const downloadsDirectory = downloadsMatch[1].replace(
         "$HOME",
-        os.homedir()
+        os.homedir(),
       );
 
       return path.join(downloadsDirectory, "Lootlog");

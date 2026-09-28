@@ -12,17 +12,9 @@ export class YtDlpEngine {
 
   async getTitle(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const process = spawn(
-        "yt-dlp",
-        [
-          "--get-title",
-          "--no-playlist",
-          url,
-        ],
-        {
-          stdio: ["ignore", "pipe", "inherit"],
-        }
-      );
+      const process = spawn("yt-dlp", ["--get-title", "--no-playlist", url], {
+        stdio: ["ignore", "pipe", "inherit"],
+      });
 
       let title = "";
 
@@ -36,11 +28,7 @@ export class YtDlpEngine {
 
       process.on("close", (exitCode) => {
         if (exitCode !== 0) {
-          reject(
-            new Error(
-              `yt-dlp exited with code ${exitCode}`
-            )
-          );
+          reject(new Error(`yt-dlp exited with code ${exitCode}`));
           return;
         }
 
@@ -58,11 +46,7 @@ export class YtDlpEngine {
     ];
 
     if (options.audioOnly) {
-      argumentsList.push(
-        "-x",
-        "--audio-format",
-        "mp3"
-      );
+      argumentsList.push("-x", "--audio-format", "mp3");
     }
 
     if (options.playlist) {
@@ -86,13 +70,9 @@ export class YtDlpEngine {
   private run(argumentsList: string[]): Promise<void> {
     return new Promise((resolve, reject) => {
       this.stopped = false;
-      this.process = spawn(
-        "yt-dlp",
-        argumentsList,
-        {
-          stdio: "inherit",
-        }
-      );
+      this.process = spawn("yt-dlp", argumentsList, {
+        stdio: "inherit",
+      });
 
       this.process.on("error", (error) => {
         this.process = null;
@@ -112,11 +92,7 @@ export class YtDlpEngine {
           return;
         }
 
-        reject(
-          new Error(
-            `yt-dlp exited with code ${exitCode}`
-          )
-        );
+        reject(new Error(`yt-dlp exited with code ${exitCode}`));
       });
     });
   }

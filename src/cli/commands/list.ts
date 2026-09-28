@@ -1,7 +1,10 @@
 import { DownloadRepository } from "../../database/repositories/download";
 import { DownloadStatus } from "../../database/models/download";
 
-export async function listCommand(repository: DownloadRepository, status?: string): Promise<void> {
+export async function listCommand(
+  repository: DownloadRepository,
+  status?: string,
+): Promise<void> {
   try {
     let downloads;
 
@@ -9,7 +12,11 @@ export async function listCommand(repository: DownloadRepository, status?: strin
       downloads = repository.findAll();
     } else {
       const normalizedStatus = status.toUpperCase();
-      if (!Object.values(DownloadStatus).includes(normalizedStatus as DownloadStatus)) {
+      if (
+        !Object.values(DownloadStatus).includes(
+          normalizedStatus as DownloadStatus,
+        )
+      ) {
         console.error("Error: Invalid status entered");
         return;
       }
@@ -24,9 +31,7 @@ export async function listCommand(repository: DownloadRepository, status?: strin
     }
 
     for (const download of downloads) {
-      console.log(
-        `${download.id} | ${download.status} | ${download.name}`
-      );
+      console.log(`${download.id} | ${download.status} | ${download.name}`);
     }
   } catch (error) {
     console.error(`Error: Cannot find downloads: ${error}`);

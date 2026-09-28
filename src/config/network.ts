@@ -11,10 +11,7 @@ export class ConnectivityMonitor {
   private timer: NodeJS.Timeout | null = null;
   private connected: boolean | null = null;
 
-  constructor(
-    onChange: ConnectivityChangeHandler,
-    checkInterval = 5000
-  ) {
+  constructor(onChange: ConnectivityChangeHandler, checkInterval = 5000) {
     this.onChange = onChange;
     this.checkInterval = checkInterval;
   }

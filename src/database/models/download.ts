@@ -11,6 +11,9 @@ export interface Download {
   id: string;
   url: string;
   name: string;
+  outputDirectory: string;
+  audioOnly: boolean;
+  playlist: boolean;
   status: DownloadStatus;
   createdAt: Date;
 }

@@ -15,6 +15,9 @@ export class DownloadRepository {
         id,
         url,
         name,
+        output_directory,
+        audio_only,
+        playlist,
         status,
         created_at
       )
@@ -22,6 +25,9 @@ export class DownloadRepository {
         @id,
         @url,
         @name,
+        @outputDirectory,
+        @audioOnly,
+        @playlist,
         @status,
         @createdAt
       )
@@ -31,6 +37,9 @@ export class DownloadRepository {
       id: download.id,
       url: download.url,
       name: download.name,
+      outputDirectory: download.outputDirectory,
+      audioOnly: download.audioOnly ? 1 : 0,
+      playlist: download.playlist ? 1 : 0,
       status: download.status,
       createdAt: download.createdAt.toISOString(),
     });
@@ -42,6 +51,9 @@ export class DownloadRepository {
         id,
         url,
         name,
+        output_directory,
+        audio_only,
+        playlist,
         status,
         created_at
       FROM downloads
@@ -63,6 +75,9 @@ export class DownloadRepository {
         id,
         url,
         name,
+        output_directory,
+        audio_only,
+        playlist,
         status,
         created_at
       FROM downloads
@@ -80,6 +95,9 @@ export class DownloadRepository {
         id,
         url,
         name,
+        output_directory,
+        audio_only,
+        playlist,
         status,
         created_at
       FROM downloads
@@ -98,6 +116,9 @@ export class DownloadRepository {
         id,
         url,
         name,
+        output_directory,
+        audio_only,
+        playlist,
         status,
         created_at
       FROM downloads
@@ -107,12 +128,9 @@ export class DownloadRepository {
     const row = statement.get(id, status) as DownloadRow | undefined;
 
     return row ? this.toDownload(row) : undefined;
-}
+  }
 
-  updateStatus(
-    id: string,
-    status: DownloadStatus
-  ): void {
+  updateStatus(id: string, status: DownloadStatus): void {
     const statement = this.database.prepare(`
       UPDATE downloads
       SET status = ?
@@ -127,6 +145,9 @@ export class DownloadRepository {
       id: row.id,
       url: row.url,
       name: row.name,
+      outputDirectory: row.output_directory,
+      audioOnly: row.audio_only === 1,
+      playlist: row.playlist === 1,
       status: row.status as DownloadStatus,
       createdAt: new Date(row.created_at),
     };
@@ -137,6 +158,9 @@ interface DownloadRow {
   id: string;
   url: string;
   name: string;
+  output_directory: string;
+  audio_only: number;
+  playlist: number;
   status: string;
   created_at: string;
 }

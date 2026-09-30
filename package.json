@@ -2,9 +2,12 @@
   "name": "lootlog",
   "version": "1.0.0",
   "description": "A command line interface for downloading YouTube videos using the yt-dlp engine",
-  "main": "index.js",
+  "main": "dist/cli/index.js",
+  "bin": {
+    "lootlog": "dist/cli/index.js"
+  },
   "scripts": {
-    "build": "npx tsc",
+    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "format": "prettier . --write",
     "format:check": "prettier . --check"

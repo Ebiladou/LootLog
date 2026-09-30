@@ -3,11 +3,14 @@
     "rootDir": "src",
     "outDir": "dist",
     "strict": true,
-    "target": "es6",
+    "target": "es2025",
     "module": "nodenext",
     "sourceMap": true,
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "moduleResolution": "nodenext",
     "types": ["node"]
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

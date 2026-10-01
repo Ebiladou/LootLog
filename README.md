@@ -2,9 +2,9 @@
 
 LootLog is a command-line YouTube download manager built with Node.js and TypeScript (currently locally).
 
-It started as a small practical project, but its existence to me is beyond downloading YouTube videos. LootLog is being built as a way to learn how command-line applications and execution engines are designed, particularly in preparation for continuing building [Spectra](https://github.com/Ebiladou/Spectra), a load-testing engine written in Go.
+It started as a small practical project as a way to learn how command-line applications and execution engines are designed, particularly in preparation for continuing building [Spectra](https://github.com/Ebiladou/Spectra), a load-testing engine written in Go.
 
-The idea was to build something smaller that can actually be used before moving forward in building a more complicated engine and CLI in Spectra. A download manager provides a useful problem to work with because it involves processes, state, persistence, interruptions, recovery, command-line interaction, and eventually background execution.
+The idea was to build something smaller that can actually be used before moving forward in building a more complicated engine and CLI in Spectra. 
 
 ## How It Works
 
@@ -13,10 +13,6 @@ LootLog does not implement video downloading itself. Instead, it uses [yt-dlp](h
 The CLI receives the user's command and options. The `DownloadManager` coordinates the download operation and controls its lifecycle. `yt-dlp` performs the actual YouTube download. SQLite stores information about downloads so that LootLog does not have to rely entirely on the memory of the currently running process.
 
 ## Project Structure
-
-The project is organized around the responsibilities of the application rather than putting everything into the CLI entry point.
-
-A simplified view of the current structure is:
 
 ```text
 src/
@@ -119,13 +115,13 @@ LootLog supports both individual videos and playlists.
 A normal download downloads the individual video.:
 
 ```bash
-npx lootlog box "<youtube-url>"
+lootlog box "<youtube-url>"
 ```
 
 To explicitly download the playlist:
 
 ```bash
-npx lootlog box "<youtube-url>" --playlist
+lootlog box "<youtube-url>" --playlist
 ```
 
 ### Audio downloads
@@ -133,7 +129,7 @@ npx lootlog box "<youtube-url>" --playlist
 Audio-only downloads can be requested with:
 
 ```bash
-npx lootlog box "<youtube-url>" --audio
+lootlog box "<youtube-url>" --audio
 ```
 
 LootLog passes the appropriate extraction and MP3 conversion options to yt-dlp. This requires FFmpeg to be available on the system.
@@ -145,7 +141,7 @@ By default, LootLog uses a local `Lootlog` directory inside the user's Downloads
 A different destination can be supplied with:
 
 ```bash
-npx lootlog box "<youtube-url>" --output ~/Downloads/YouTube/videos
+lootlog box "<youtube-url>" --output ~/Downloads/YouTube/videos
 ```
 
 ### Listing downloads
@@ -153,19 +149,19 @@ npx lootlog box "<youtube-url>" --output ~/Downloads/YouTube/videos
 - List all downloads:
 
 ```bash
-npx lootlog list
+lootlog list
 ```
 
 - Filter by status:
 
 ```bash
-npx lootlog list --status PAUSED
+lootlog list --status PAUSED
 ```
 
 Status values are case-insensitive, so this also works:
 
 ```bash
-npx lootlog list --status paused
+lootlog list --status paused
 ```
 
 ### Resuming a download
@@ -173,7 +169,7 @@ npx lootlog list --status paused
 A paused download can be resumed with its ID:
 
 ```bash
-npx lootlog resume <id>
+lootlog resume <id>
 ```
 
 ### Cancelling a download
@@ -181,7 +177,7 @@ npx lootlog resume <id>
 An active download can be cancelled with:
 
 ```bash
-npx lootlog cancel <id>
+lootlog cancel <id>
 ```
 
 ### Download information
@@ -189,7 +185,7 @@ npx lootlog cancel <id>
 The info command is intended to display detailed information about a specific download:
 
 ```bash
-npx lootlog info <id>
+lootlog info <id>
 ```
 
 ### Network Interruption (Pause)
@@ -265,7 +261,7 @@ The default download directory is separate from the application data and is norm
 ~/Downloads/Lootlog
 ```
 
-On Linux, LootLog attempts to respect the user's configured Downloads directory before falling back to the standard location. Because the project is still under development, the local database can currently be recreated when the schema changes.
+Although LootLog allows users configure Downloads directory before falling back to the standard location. And because the project is still under development, the local database can currently be recreated when the schema changes.
 
 For instance:
 
@@ -294,16 +290,18 @@ There are a bunch of things to fix, really, so the project will continue to evol
 
 Options:
 
--o, --output <directory>    Download directory
--a, --audio                 Download audio only and convert to MP3
---playlist                  Download every video in the playlist
+- -o, --output <directory>    Download directory
+- -a, --audio                 Download audio only and convert to MP3
+- --playlist                  Download every video in the playlist
 
 Examples:
 
-`npx lootlog box "<url>"`
-`npx lootlog box "<url>" --audio`
-`npx lootlog box "<url>" --playlist`
-`npx lootlog box "<url>" --output ~/Downloads/Lootlog/videos`
+```bash
+npx lootlog box "<url>"
+npx lootlog box "<url>" --audio
+npx lootlog box "<url>" --playlist
+npx lootlog box "<url>" --output ~/Downloads/Lootlog/videos
+```
 
 Options can also be combined:
 
@@ -316,13 +314,14 @@ Options can also be combined:
 
 Option:
 
--s, --status <status>    Filter by download status
+- -s, --status <status>    Filter by download status
 
 Examples:
 
-`npx lootlog list`
-`npx lootlog list --status PAUSED`
-
+```bash
+npx lootlog list
+npx lootlog list --status PAUSED
+```
 
 ### Resume a paused download.
 
@@ -339,7 +338,6 @@ Example:
 Example:
 
 `npx lootlog cancel cced60d8-cfba-46e8-b1a5-4993a062ce7a`
-
 
 ### Show information about a download.
 

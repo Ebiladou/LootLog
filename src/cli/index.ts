@@ -6,6 +6,7 @@ import { boxCommand } from "./commands/box";
 import { listCommand } from "./commands/list";
 import { resumeCommand } from "./commands/resume";
 import { cancelCommand } from "./commands/cancel";
+import { infoCommand } from "./commands/info";
 
 import { createDatabase } from "../database/db";
 import { DownloadRepository } from "../database/repositories/download";
@@ -69,7 +70,12 @@ async function main(): Promise<void> {
       return cancelCommand(id, downloadManager);
     });
 
-  program.command("info <id>").description("Show download details");
+  program
+    .command("info <id>")
+    .description("Show download details")
+    .action((id) => {
+      return infoCommand(id, downloadRepository);
+    });
 
   await program.parseAsync();
 

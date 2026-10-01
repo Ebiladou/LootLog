@@ -4,7 +4,7 @@ LootLog is a command-line YouTube download manager built with Node.js and TypeSc
 
 It started as a small practical project as a way to learn how command-line applications and execution engines are designed, particularly in preparation for continuing building [Spectra](https://github.com/Ebiladou/Spectra), a load-testing engine written in Go.
 
-The idea was to build something smaller that can actually be used before moving forward in building a more complicated engine and CLI in Spectra. 
+The idea was to build something smaller that can actually be used before moving forward in building a more complicated engine and CLI in Spectra.
 
 ## How It Works
 
@@ -37,28 +37,28 @@ src/
     │   └── download.ts
     └── repositories/
         └── download.ts
-    
+
 ```
 
-* The CLI layer defines commands and translates user input into application operations.
-* The `DownloadManager` coordinates download behavior.
-* The yt-dlp engine is responsible for communicating with the external `yt-dlp` process.
-* The database layer handles persistence.
-* The network layer monitors connectivity.
+- The CLI layer defines commands and translates user input into application operations.
+- The `DownloadManager` coordinates download behavior.
+- The yt-dlp engine is responsible for communicating with the external `yt-dlp` process.
+- The database layer handles persistence.
+- The network layer monitors connectivity.
 
 ## Available Features
 
-* YouTube video downloads
-* Playlist downloads
-* Audio-only downloads with MP3 conversion
-* Custom output directories
-* Persistent download records
-* Download status tracking
-* Listing downloads
-* Filtering downloads by status
-* Automatic pausing downloads when network connectivity is lost
-* Resuming paused downloads
-* Cancelling active downloads
+- YouTube video downloads
+- Playlist downloads
+- Audio-only downloads with MP3 conversion
+- Custom output directories
+- Persistent download records
+- Download status tracking
+- Listing downloads
+- Filtering downloads by status
+- Automatic pausing downloads when network connectivity is lost
+- Resuming paused downloads
+- Cancelling active downloads
 
 ## Feature Commands
 
@@ -69,13 +69,13 @@ LootLog supports both individual videos and playlists.
 A normal download downloads the individual video.:
 
 ```bash
-lootlog box "<youtube-url>"
+lootlog box "<url>"
 ```
 
 To explicitly download the playlist:
 
 ```bash
-lootlog box "<youtube-url>" --playlist
+lootlog box "<url>" --playlist
 ```
 
 ### Audio downloads
@@ -83,7 +83,7 @@ lootlog box "<youtube-url>" --playlist
 Audio-only downloads can be requested with:
 
 ```bash
-lootlog box "<youtube-url>" --audio
+lootlog box "<url>" --audio
 ```
 
 This requires FFmpeg to be available on the system.
@@ -95,7 +95,7 @@ By default, LootLog uses a local `Lootlog` directory inside the user's Downloads
 A different destination can be supplied with:
 
 ```bash
-lootlog box "<youtube-url>" --output ~/Downloads/YouTube/videos
+lootlog box "<url>" --output ~/Downloads/YouTube/videos
 ```
 
 ### Listing downloads
@@ -156,10 +156,10 @@ LootLog is currently **not packaged as an npm package**. It is intended to be cl
 
 ### Requirements
 
-* Node.js
-* npm
-* yt-dlp
-* FFmpeg
+- Node.js
+- npm
+- yt-dlp
+- FFmpeg
 
 ### Clone the repository
 
@@ -192,7 +192,7 @@ npx lootlog --help
 For example:
 
 ```bash
-npx lootlog box "<youtube-url>"
+npx lootlog box "<url>"
 ```
 
 ## Local Application Data
@@ -225,7 +225,6 @@ rm ~/.lootlog/database.sqlite
 
 The database will be recreated the next time LootLog starts. Conviniet than migration, and does not matter since this is local for now.
 
-
 ## Current Status
 
 LootLog is currently in active development, subject to my time and mental health status.
@@ -244,9 +243,9 @@ There are a bunch of things to fix, really, so the project will continue to evol
 
 Options:
 
-- -o, --output <directory>    Download directory
-- -a, --audio                 Download audio only and convert to MP3
-- --playlist                  Download every video in the playlist
+- -o, --output <directory> Download directory
+- -a, --audio Download audio only and convert to MP3
+- --playlist Download every video in the playlist
 
 Examples:
 
@@ -261,14 +260,13 @@ Options can also be combined:
 
 `npx lootlog box "<url>" --audio --output ~/Downloads/Lootlog/audio`
 
-
 ### list downloads
 
 `lootlog list`
 
 Option:
 
-- -s, --status <status>    Filter by download status
+- -s, --status <status> Filter by download status
 
 Examples:
 

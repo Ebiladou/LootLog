@@ -10,7 +10,7 @@ The idea was to build something smaller that can actually be used before moving 
 
 LootLog does not implement video downloading itself. Instead, it uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) as the download engine. LootLog is only responsible for managing the operation around yt-dlp.
 
-The CLI receives the user's command and options. The `DownloadManager` coordinates the download operation and controls its lifecycle. `yt-dlp` performs the actual YouTube download. SQLite stores information about downloads so that LootLog does not have to rely entirely on the memory of the currently running process.
+The CLI receives the user's command and options. The `DownloadManager` coordinates the download operation and controls its lifecycle. `yt-dlp` performs the actual YouTube download. `SQLite` stores information about downloads so that LootLog does not have to rely entirely on the memory of the currently running process.
 
 ## Project Structure
 
@@ -40,17 +40,11 @@ src/
     
 ```
 
-The CLI layer defines commands and translates user input into application operations.
-
-The `DownloadManager` coordinates download behavior.
-
-The yt-dlp engine is responsible for communicating with the external `yt-dlp` process.
-
-The database layer handles persistence.
-
-The network layer monitors connectivity.
-
-This structure is intentionally evolving. The project is being built incrementally rather than designing the entire final architecture before implementing anything.
+* The CLI layer defines commands and translates user input into application operations.
+* The `DownloadManager` coordinates download behavior.
+* The yt-dlp engine is responsible for communicating with the external `yt-dlp` process.
+* The database layer handles persistence.
+* The network layer monitors connectivity.
 
 ## Available Features
 
@@ -65,46 +59,6 @@ This structure is intentionally evolving. The project is being built incremental
 * Automatic pausing downloads when network connectivity is lost
 * Resuming paused downloads
 * Cancelling active downloads
-* Continuing partially downloaded files
-
-The project is still under active development. Some of these capabilities are currently being updated as the architecture evolves.
-
-## Download Lifecycle
-
-A download is treated as a stateful operation. The current states are:
-
-```text
-PENDING
-   │
-   ▼
-DOWNLOADING
-   │
-   ├──────────────► COMPLETED
-   │
-   ├──────────────► PAUSED
-   │                  │
-   │                  ▼
-   │             DOWNLOADING
-   │
-   ├──────────────► CANCELLED
-   │
-   └──────────────► FAILED
-```
-
-`PENDING` means the download has been created but has not started executing.
-
-`DOWNLOADING` means yt-dlp is currently performing the download.
-
-`PAUSED` represents a download that stopped temporarily and can be resumed. Network interruption is currently the primary reason for entering this state.
-
-`COMPLETED` means the download finished successfully.
-
-`CANCELLED` means the user deliberately stopped the download.
-
-`FAILED` represents an unsuccessful download that was not identified as a recoverable pause or intentional cancellation.
-
-The state is persisted in SQLite rather than existing only in memory.
-
 
 ## Feature Commands
 
@@ -132,7 +86,7 @@ Audio-only downloads can be requested with:
 lootlog box "<youtube-url>" --audio
 ```
 
-LootLog passes the appropriate extraction and MP3 conversion options to yt-dlp. This requires FFmpeg to be available on the system.
+This requires FFmpeg to be available on the system.
 
 ### Custom output directory
 
@@ -278,7 +232,7 @@ LootLog is currently in active development, subject to my time and mental health
 
 The basic download flow, persistence, status tracking, playlist support, audio downloads, network interruption handling, and resume behavior are working.
 
-The next stage is improving the architecture around long-running downloads so that commands executed from separate terminal sessions can communicate with the process responsible for an active download.
+The next stage is improving the architecture around long running downloads so that commands executed from separate terminal sessions can communicate with the process responsible for an active download.
 
 There are a bunch of things to fix, really, so the project will continue to evolve as the underlying concepts become clearer.
 

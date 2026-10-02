@@ -19,6 +19,7 @@ export class DownloadRepository {
         audio_only,
         playlist,
         status,
+        process_id,
         created_at
       )
       VALUES (
@@ -29,6 +30,7 @@ export class DownloadRepository {
         @audioOnly,
         @playlist,
         @status,
+        @processId,
         @createdAt
       )
     `);
@@ -41,6 +43,7 @@ export class DownloadRepository {
       audioOnly: download.audioOnly ? 1 : 0,
       playlist: download.playlist ? 1 : 0,
       status: download.status,
+      processId: download.processId,
       createdAt: download.createdAt.toISOString(),
     });
   }
@@ -55,6 +58,7 @@ export class DownloadRepository {
         audio_only,
         playlist,
         status,
+        process_id,
         created_at
       FROM downloads
       WHERE id = ?
@@ -79,6 +83,7 @@ export class DownloadRepository {
         audio_only,
         playlist,
         status,
+        process_id,
         created_at
       FROM downloads
       ORDER BY created_at DESC
@@ -99,6 +104,7 @@ export class DownloadRepository {
         audio_only,
         playlist,
         status,
+        process_id,
         created_at
       FROM downloads
       WHERE status = ?
@@ -120,6 +126,7 @@ export class DownloadRepository {
         audio_only,
         playlist,
         status,
+        process_id,
         created_at
       FROM downloads
       WHERE id = ? AND status = ?
@@ -140,6 +147,16 @@ export class DownloadRepository {
     statement.run(status, id);
   }
 
+  updateProcessId(id: string, processId: number | null): void {
+    const statement = this.database.prepare(`
+      UPDATE downloads
+      SET process_id = ?
+      WHERE id = ?
+    `);
+
+    statement.run(processId, id);
+  }
+
   private toDownload(row: DownloadRow): Download {
     return {
       id: row.id,
@@ -149,6 +166,7 @@ export class DownloadRepository {
       audioOnly: row.audio_only === 1,
       playlist: row.playlist === 1,
       status: row.status as DownloadStatus,
+      processId: row.process_id,
       createdAt: new Date(row.created_at),
     };
   }
@@ -162,5 +180,6 @@ interface DownloadRow {
   audio_only: number;
   playlist: number;
   status: string;
+  process_id: number | null;
   created_at: string;
 }

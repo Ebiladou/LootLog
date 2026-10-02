@@ -15,5 +15,6 @@ export interface Download {
   audioOnly: boolean;
   playlist: boolean;
   status: DownloadStatus;
+  processId: number | null;
   createdAt: Date;
 }

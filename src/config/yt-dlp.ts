@@ -54,6 +54,10 @@ export class YtDlpEngine {
     await this.run(argumentsList);
   }
 
+  getProcessId(): number | null {
+    return this.process?.pid ?? null;
+  }
+
   stop(): void {
     if (this.process === null) {
       return;

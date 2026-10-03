@@ -19,6 +19,7 @@ export function createDatabase(): Database.Database {
       audio_only INTEGER NOT NULL,
       playlist INTEGER NOT NULL,
       status TEXT NOT NULL,
+      process_id INTEGER,
       created_at TEXT NOT NULL
     )
   `);

@@ -137,24 +137,20 @@ export class DownloadRepository {
     return row ? this.toDownload(row) : undefined;
   }
 
-  updateStatus(id: string, status: DownloadStatus): void {
+  updateStatusAndProcessId(
+    id: string,
+    status: DownloadStatus,
+    processId: number | null,
+  ): void {
     const statement = this.database.prepare(`
-      UPDATE downloads
-      SET status = ?
-      WHERE id = ?
-    `);
+    UPDATE downloads
+    SET
+      status = ?,
+      process_id = ?
+    WHERE id = ?
+  `);
 
-    statement.run(status, id);
-  }
-
-  updateProcessId(id: string, processId: number | null): void {
-    const statement = this.database.prepare(`
-      UPDATE downloads
-      SET process_id = ?
-      WHERE id = ?
-    `);
-
-    statement.run(processId, id);
+    statement.run(status, processId, id);
   }
 
   private toDownload(row: DownloadRow): Download {

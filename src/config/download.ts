@@ -1,3 +1,4 @@
+import process from "node:process";
 import { randomUUID } from "node:crypto";
 
 import { Download, DownloadStatus } from "../database/models/download";
@@ -41,28 +42,41 @@ export class DownloadManager {
       audioOnly: options.audioOnly ?? false,
       playlist: options.playlist ?? false,
       status: DownloadStatus.PENDING,
+      processId: null,
       createdAt: new Date(),
     };
 
     this.downloadRepository.create(download);
 
-    download.status = DownloadStatus.DOWNLOADING;
-
-    this.downloadRepository.updateStatus(download.id, download.status);
-
     this.activeDownloadId = download.id;
 
     try {
-      await this.downloadEngine.download(download.url, {
+      const downloadPromise = this.downloadEngine.download(download.url, {
         outputDirectory: download.outputDirectory,
         audioOnly: download.audioOnly,
         playlist: download.playlist,
       });
 
+      const processId = this.downloadEngine.getProcessId();
+
+      download.status = DownloadStatus.DOWNLOADING;
+
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        download.status,
+        processId,
+      );
+
+      await downloadPromise;
+
       if (this.stoppingDownloadId === download.id) {
         download.status = this.stoppingStatus!;
 
-        this.downloadRepository.updateStatus(download.id, download.status);
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
 
         this.clearStoppingState();
         this.activeDownloadId = null;
@@ -70,18 +84,58 @@ export class DownloadManager {
         return download;
       }
 
+      const currentDownload = this.downloadRepository.findById(download.id);
+
+      if (currentDownload?.status === DownloadStatus.CANCELLED) {
+        download.status = DownloadStatus.CANCELLED;
+
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
+
+        this.activeDownloadId = null;
+
+        return download;
+      }
+
       download.status = DownloadStatus.COMPLETED;
 
-      this.downloadRepository.updateStatus(download.id, download.status);
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        download.status,
+        null,
+      );
 
       this.activeDownloadId = null;
     } catch (error) {
       if (this.stoppingDownloadId === download.id) {
         download.status = this.stoppingStatus!;
 
-        this.downloadRepository.updateStatus(download.id, download.status);
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
 
         this.clearStoppingState();
+        this.activeDownloadId = null;
+
+        return download;
+      }
+
+      const currentDownload = this.downloadRepository.findById(download.id);
+
+      if (currentDownload?.status === DownloadStatus.CANCELLED) {
+        download.status = DownloadStatus.CANCELLED;
+
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
+
         this.activeDownloadId = null;
 
         return download;
@@ -90,7 +144,11 @@ export class DownloadManager {
       if (!this.networkConnected) {
         download.status = DownloadStatus.PAUSED;
 
-        this.downloadRepository.updateStatus(download.id, download.status);
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
 
         this.activeDownloadId = null;
 
@@ -99,7 +157,11 @@ export class DownloadManager {
 
       download.status = DownloadStatus.FAILED;
 
-      this.downloadRepository.updateStatus(download.id, download.status);
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        download.status,
+        null,
+      );
 
       this.activeDownloadId = null;
 
@@ -126,7 +188,30 @@ export class DownloadManager {
   }
 
   cancel(id: string): void {
-    this.stopDownload(id, DownloadStatus.CANCELLED);
+    const download = this.downloadRepository.findByIdAndStatus(
+      id,
+      DownloadStatus.DOWNLOADING,
+    );
+
+    if (!download) {
+      throw new Error(`Download ${id} is not currently downloading`);
+    }
+
+    if (download.processId === null) {
+      throw new Error(`Download ${id} does not have an active process`);
+    }
+
+    try {
+      process.kill(download.processId, "SIGINT");
+    } catch (error) {
+      throw new Error(`Could not stop process ${download.processId}: ${error}`);
+    }
+
+    this.downloadRepository.updateStatusAndProcessId(
+      download.id,
+      DownloadStatus.CANCELLED,
+      null,
+    );
   }
 
   async resume(download: Download): Promise<void> {
@@ -134,31 +219,94 @@ export class DownloadManager {
 
     this.clearStoppingState();
 
-    download.status = DownloadStatus.DOWNLOADING;
-
-    this.downloadRepository.updateStatus(download.id, download.status);
-
     this.activeDownloadId = download.id;
 
     try {
-      await this.downloadEngine.download(download.url, {
+      const downloadPromise = this.downloadEngine.download(download.url, {
         outputDirectory: download.outputDirectory,
         audioOnly: download.audioOnly,
         playlist: download.playlist,
       });
 
+      const processId = this.downloadEngine.getProcessId();
+
+      download.status = DownloadStatus.DOWNLOADING;
+
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        download.status,
+        processId,
+      );
+
+      await downloadPromise;
+
+      if (this.stoppingDownloadId === download.id) {
+        download.status = this.stoppingStatus!;
+
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
+
+        this.clearStoppingState();
+        this.activeDownloadId = null;
+
+        return;
+      }
+
+      const currentDownload = this.downloadRepository.findById(download.id);
+
+      if (currentDownload?.status === DownloadStatus.CANCELLED) {
+        download.status = DownloadStatus.CANCELLED;
+
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
+
+        this.activeDownloadId = null;
+
+        return;
+      }
+
       download.status = DownloadStatus.COMPLETED;
 
-      this.downloadRepository.updateStatus(download.id, download.status);
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        download.status,
+        null,
+      );
 
       this.activeDownloadId = null;
     } catch (error) {
       if (this.stoppingDownloadId === download.id) {
         download.status = this.stoppingStatus!;
 
-        this.downloadRepository.updateStatus(download.id, download.status);
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
 
         this.clearStoppingState();
+        this.activeDownloadId = null;
+
+        return;
+      }
+
+      const currentDownload = this.downloadRepository.findById(download.id);
+
+      if (currentDownload?.status === DownloadStatus.CANCELLED) {
+        download.status = DownloadStatus.CANCELLED;
+
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
+
         this.activeDownloadId = null;
 
         return;
@@ -167,7 +315,11 @@ export class DownloadManager {
       if (!this.networkConnected) {
         download.status = DownloadStatus.PAUSED;
 
-        this.downloadRepository.updateStatus(download.id, download.status);
+        this.downloadRepository.updateStatusAndProcessId(
+          download.id,
+          download.status,
+          null,
+        );
 
         this.activeDownloadId = null;
 
@@ -176,7 +328,11 @@ export class DownloadManager {
 
       download.status = DownloadStatus.FAILED;
 
-      this.downloadRepository.updateStatus(download.id, download.status);
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        download.status,
+        null,
+      );
 
       this.activeDownloadId = null;
 

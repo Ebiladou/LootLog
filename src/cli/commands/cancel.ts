@@ -6,6 +6,7 @@ export async function cancelCommand(
 ): Promise<void> {
   try {
     downloadManager.cancel(id);
+    console.log(`Download ${id} cancelled.`);
   } catch (error) {
     console.error(`Error: Download cancel failed: ${error}`);
   }

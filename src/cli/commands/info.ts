@@ -19,6 +19,7 @@ export async function infoCommand(
     console.log(`Audio only: ${download.audioOnly}`);
     console.log(`Playlist: ${download.playlist}`);
     console.log(`Status: ${download.status}`);
+    console.log(`Process ID: ${download.processId}`);
     console.log(`Created at: ${download.createdAt}`);
   } catch (error) {
     console.error(`Error: Download info unavailable: ${error}`);

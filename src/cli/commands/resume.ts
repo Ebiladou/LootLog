@@ -17,7 +17,7 @@ export async function resumeCommand(
       return;
     }
 
-    await downloadManager.resume(pausedDownload);
+    await downloadManager.resume(pausedDownload.id);
   } catch (error) {
     console.error(`Error: Download not found ${error}`);
   }

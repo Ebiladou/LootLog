@@ -74,27 +74,11 @@ export class DownloadWorker {
 
       this.queuedDownloadIds.delete(download.id);
 
-      const currentDownload = this.downloadRepository.findById(
-        download.id,
-      );
-
-      if (
-        !currentDownload ||
-        currentDownload.status !== DownloadStatus.PENDING
-      ) {
-        continue;
-      }
-
       try {
-        await this.downloadManager.download({
-          url: currentDownload.url,
-          outputDirectory: currentDownload.outputDirectory,
-          audioOnly: currentDownload.audioOnly,
-          playlist: currentDownload.playlist,
-        });
+        await this.downloadManager.executeDownload(download.id)
       } catch (error) {
         console.error(
-          `Error processing download ${currentDownload.id}:`,
+          `Error processing download ${download.id}:`,
           error,
         );
       }

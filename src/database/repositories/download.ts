@@ -48,7 +48,7 @@ export class DownloadRepository {
     });
   }
 
-  findById(id: string): Download | null {
+  findById(id: string): Download | undefined {
     const statement = this.database.prepare(`
       SELECT
         id,
@@ -65,12 +65,8 @@ export class DownloadRepository {
     `);
 
     const row = statement.get(id) as DownloadRow | undefined;
-
-    if (!row) {
-      return null;
-    }
-
-    return this.toDownload(row);
+    
+    return row ? this.toDownload(row) : undefined;
   }
 
   findAll(): Download[] {

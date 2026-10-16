@@ -47,119 +47,120 @@ export class DownloadManager {
     };
 
     this.downloadRepository.create(download);
+    return download;
+  }
 
-    this.activeDownloadId = download.id;
+  async executeDownload(downloadId: string): Promise<void> {
+    const pendingDownload = this.downloadRepository.findByIdAndStatus(downloadId, DownloadStatus.PENDING)
+
+    if (!pendingDownload){
+      console.error(`Error: No pending download with id: ${downloadId}`)
+      return
+    }
+
+    this.activeDownloadId = downloadId;
 
     try {
-      const downloadPromise = this.downloadEngine.download(download.url, {
-        outputDirectory: download.outputDirectory,
-        audioOnly: download.audioOnly,
-        playlist: download.playlist,
+      const downloadPromise = this.downloadEngine.download(pendingDownload.url, {
+        outputDirectory: pendingDownload.outputDirectory,
+        audioOnly: pendingDownload.audioOnly,
+        playlist: pendingDownload.playlist,
       });
 
       const processId = this.downloadEngine.getProcessId();
 
-      download.status = DownloadStatus.DOWNLOADING;
+      // once multiple workers is introduced, the status will be updated before the download engine is called so only one worker gets to pick the download from the queue before the ststus gets updated in the db.
+      pendingDownload.status = DownloadStatus.DOWNLOADING;
 
       this.downloadRepository.updateStatusAndProcessId(
-        download.id,
-        download.status,
+        pendingDownload.id,
+        pendingDownload.status,
         processId,
       );
 
       await downloadPromise;
 
-      if (this.stoppingDownloadId === download.id) {
-        download.status = this.stoppingStatus!;
+      if (this.stoppingDownloadId === pendingDownload.id) {
+        pendingDownload.status = this.stoppingStatus!;
 
         this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
+          pendingDownload.id,
+          pendingDownload.status,
           null,
         );
 
         this.clearStoppingState();
         this.activeDownloadId = null;
-
-        return download;
       }
 
-      const currentDownload = this.downloadRepository.findById(download.id);
+      const currentDownload = this.downloadRepository.findById(pendingDownload.id);
 
       if (currentDownload?.status === DownloadStatus.CANCELLED) {
-        download.status = DownloadStatus.CANCELLED;
+        pendingDownload.status = DownloadStatus.CANCELLED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
+          pendingDownload.id,
+          pendingDownload.status,
           null,
         );
 
         this.activeDownloadId = null;
-
-        return download;
       }
 
-      download.status = DownloadStatus.COMPLETED;
+      pendingDownload.status = DownloadStatus.COMPLETED;
 
       this.downloadRepository.updateStatusAndProcessId(
-        download.id,
-        download.status,
+        pendingDownload.id,
+        pendingDownload.status,
         null,
       );
 
       this.activeDownloadId = null;
     } catch (error) {
-      if (this.stoppingDownloadId === download.id) {
-        download.status = this.stoppingStatus!;
+      if (this.stoppingDownloadId === pendingDownload.id) {
+        pendingDownload.status = this.stoppingStatus!;
 
         this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
+          pendingDownload.id,
+          pendingDownload.status,
           null,
         );
 
         this.clearStoppingState();
         this.activeDownloadId = null;
-
-        return download;
       }
 
-      const currentDownload = this.downloadRepository.findById(download.id);
+      const currentDownload = this.downloadRepository.findById(pendingDownload.id);
 
       if (currentDownload?.status === DownloadStatus.CANCELLED) {
-        download.status = DownloadStatus.CANCELLED;
+        pendingDownload.status = DownloadStatus.CANCELLED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
+          pendingDownload.id,
+          pendingDownload.status,
           null,
         );
 
         this.activeDownloadId = null;
-
-        return download;
       }
 
       if (!this.networkConnected) {
-        download.status = DownloadStatus.PAUSED;
+        pendingDownload.status = DownloadStatus.PAUSED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
+          pendingDownload.id,
+          pendingDownload.status,
           null,
         );
 
         this.activeDownloadId = null;
-
-        return download;
       }
 
-      download.status = DownloadStatus.FAILED;
+      pendingDownload.status = DownloadStatus.FAILED;
 
       this.downloadRepository.updateStatusAndProcessId(
-        download.id,
-        download.status,
+        pendingDownload.id,
+        pendingDownload.status,
         null,
       );
 
@@ -167,8 +168,6 @@ export class DownloadManager {
 
       throw error;
     }
-
-    return download;
   }
 
   setNetworkConnected(connected: boolean): void {
@@ -187,157 +186,54 @@ export class DownloadManager {
     this.stopDownload(this.activeDownloadId, DownloadStatus.PAUSED);
   }
 
-  cancel(id: string): void {
-    const download = this.downloadRepository.findByIdAndStatus(
-      id,
-      DownloadStatus.DOWNLOADING,
-    );
+  async cancel(id: string): Promise<void> {
+    const download = this.downloadRepository.findById(id);
 
     if (!download) {
-      throw new Error(`Download ${id} is not currently downloading`);
+      throw new Error(`Download with id: ${id} not found`);
     }
 
-    if (download.processId === null) {
-      throw new Error(`Download ${id} does not have an active process`);
-    }
+    if (download.status === DownloadStatus.DOWNLOADING){
+      if (download.processId === null) {
+        throw new Error(`Download ${id} does not have an active process`);
+      }
 
-    try {
-      process.kill(download.processId, "SIGINT");
-    } catch (error) {
-      throw new Error(`Could not stop process ${download.processId}: ${error}`);
-    }
+      try {
+        process.kill(download.processId, "SIGINT");
+      } catch (error) {
+        throw new Error(`Could not stop process ${download.processId}: ${error}`);
+      }
 
-    this.downloadRepository.updateStatusAndProcessId(
-      download.id,
-      DownloadStatus.CANCELLED,
-      null,
-    );
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        DownloadStatus.CANCELLED,
+        null,
+      );
+    } else if (download.status === DownloadStatus.PENDING) {
+      this.downloadRepository.updateStatusAndProcessId(
+        download.id,
+        DownloadStatus.CANCELLED,
+        null,
+      );
+    };
+    
   }
 
-  async resume(download: Download): Promise<void> {
-    this.networkConnected = true;
+  async resume(downloadId: string): Promise<void> {
+    const pausedDownload = this.downloadRepository.findByIdAndStatus(downloadId, DownloadStatus.PAUSED);
 
-    this.clearStoppingState();
+    if(!pausedDownload){
+      console.error(`Error: No paused download with id: ${downloadId}`)
+      return
+    };
 
-    this.activeDownloadId = download.id;
+    pausedDownload.status = DownloadStatus.PENDING;
 
-    try {
-      const downloadPromise = this.downloadEngine.download(download.url, {
-        outputDirectory: download.outputDirectory,
-        audioOnly: download.audioOnly,
-        playlist: download.playlist,
-      });
-
-      const processId = this.downloadEngine.getProcessId();
-
-      download.status = DownloadStatus.DOWNLOADING;
-
-      this.downloadRepository.updateStatusAndProcessId(
-        download.id,
-        download.status,
-        processId,
-      );
-
-      await downloadPromise;
-
-      if (this.stoppingDownloadId === download.id) {
-        download.status = this.stoppingStatus!;
-
-        this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
-          null,
-        );
-
-        this.clearStoppingState();
-        this.activeDownloadId = null;
-
-        return;
-      }
-
-      const currentDownload = this.downloadRepository.findById(download.id);
-
-      if (currentDownload?.status === DownloadStatus.CANCELLED) {
-        download.status = DownloadStatus.CANCELLED;
-
-        this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
-          null,
-        );
-
-        this.activeDownloadId = null;
-
-        return;
-      }
-
-      download.status = DownloadStatus.COMPLETED;
-
-      this.downloadRepository.updateStatusAndProcessId(
-        download.id,
-        download.status,
-        null,
-      );
-
-      this.activeDownloadId = null;
-    } catch (error) {
-      if (this.stoppingDownloadId === download.id) {
-        download.status = this.stoppingStatus!;
-
-        this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
-          null,
-        );
-
-        this.clearStoppingState();
-        this.activeDownloadId = null;
-
-        return;
-      }
-
-      const currentDownload = this.downloadRepository.findById(download.id);
-
-      if (currentDownload?.status === DownloadStatus.CANCELLED) {
-        download.status = DownloadStatus.CANCELLED;
-
-        this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
-          null,
-        );
-
-        this.activeDownloadId = null;
-
-        return;
-      }
-
-      if (!this.networkConnected) {
-        download.status = DownloadStatus.PAUSED;
-
-        this.downloadRepository.updateStatusAndProcessId(
-          download.id,
-          download.status,
-          null,
-        );
-
-        this.activeDownloadId = null;
-
-        return;
-      }
-
-      download.status = DownloadStatus.FAILED;
-
-      this.downloadRepository.updateStatusAndProcessId(
-        download.id,
-        download.status,
-        null,
-      );
-
-      this.activeDownloadId = null;
-
-      throw error;
-    }
+    this.downloadRepository.updateStatusAndProcessId(
+      pausedDownload.id,
+      pausedDownload.status,
+      null
+    );
   }
 
   private stopDownload(id: string, status: DownloadStatus): void {

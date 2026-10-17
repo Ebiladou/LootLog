@@ -1,13 +1,11 @@
-import { Download } from "../database/models/download";
-
 export class DownloadQueue {
-  private readonly downloads: Download[] = [];
+  private readonly downloads: string[] = [];
 
-  enqueue(download: Download): void {
-    this.downloads.push(download);
+  enqueue(downloadId: string): void {
+    this.downloads.push(downloadId);
   }
 
-  dequeue(): Download | undefined {
+  dequeue(): string | undefined {
     return this.downloads.shift();
   }
 

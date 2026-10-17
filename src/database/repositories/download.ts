@@ -65,7 +65,7 @@ export class DownloadRepository {
     `);
 
     const row = statement.get(id) as DownloadRow | undefined;
-    
+
     return row ? this.toDownload(row) : undefined;
   }
 

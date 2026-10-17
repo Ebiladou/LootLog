@@ -149,6 +149,22 @@ export class DownloadRepository {
     statement.run(status, processId, id);
   }
 
+  updateExecutingDownload(id: string): boolean {
+    const statement = this.database.prepare(`
+      UPDATE downloads
+      SET status = ?
+      WHERE id = ? AND status = ?
+    `);
+
+    const result = statement.run(
+      DownloadStatus.DOWNLOADING,
+      id,
+      DownloadStatus.PENDING,
+    );
+
+    return result.changes === 1;
+  }
+
   private toDownload(row: DownloadRow): Download {
     return {
       id: row.id,

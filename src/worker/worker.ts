@@ -75,12 +75,9 @@ export class DownloadWorker {
       this.queuedDownloadIds.delete(download.id);
 
       try {
-        await this.downloadManager.executeDownload(download.id)
+        await this.downloadManager.executeDownload(download.id);
       } catch (error) {
-        console.error(
-          `Error processing download ${download.id}:`,
-          error,
-        );
+        console.error(`Error processing download ${download.id}:`, error);
       }
     }
   }

@@ -9,8 +9,8 @@ export class DownloadWorker {
   private readonly downloadManager: DownloadManager;
 
   private readonly queuedDownloadIds = new Set<string>();
-
   private running = false;
+  private processing: Promise<void> | null = null;
 
   constructor(
     queue: DownloadQueue,
@@ -23,19 +23,23 @@ export class DownloadWorker {
   }
 
   start(): void {
-    if (this.running) {
+    if (this.processing) {
       return;
     }
 
     this.running = true;
 
-    this.loadPendingDownloads();
-
-    void this.processQueue();
+    this.processing = this.processQueue().finally(() => {
+      this.processing = null;
+    });
   }
 
-  stop(): void {
+  async stop(): Promise<void> {
     this.running = false;
+
+    if (this.processing) {
+      await this.processing;
+    }
   }
 
   private loadPendingDownloads(): void {
@@ -44,47 +48,33 @@ export class DownloadWorker {
     );
 
     for (const download of downloads) {
-      this.enqueue(download);
-    }
-  }
+      if (this.queuedDownloadIds.has(download.id)) {
+        continue;
+      }
 
-  private enqueue(download: Parameters<DownloadQueue["enqueue"]>[0]): void {
-    if (download.status !== DownloadStatus.PENDING) {
-      return;
+      this.queue.enqueue(download.id);
+      this.queuedDownloadIds.add(download.id);
     }
-
-    if (this.queuedDownloadIds.has(download.id)) {
-      return;
-    }
-
-    this.queue.enqueue(download);
-    this.queuedDownloadIds.add(download.id);
   }
 
   private async processQueue(): Promise<void> {
     while (this.running) {
       this.loadPendingDownloads();
 
-      const download = this.queue.dequeue();
+      const downloadId = this.queue.dequeue();
 
-      if (!download) {
-        await this.wait(1000);
+      if (!downloadId) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         continue;
       }
 
-      this.queuedDownloadIds.delete(download.id);
+      this.queuedDownloadIds.delete(downloadId);
 
       try {
-        await this.downloadManager.executeDownload(download.id);
+        await this.downloadManager.executeDownload(downloadId);
       } catch (error) {
-        console.error(`Error processing download ${download.id}:`, error);
+        console.error(`Error processing download ${downloadId}:`, error);
       }
     }
-  }
-
-  private wait(milliseconds: number): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeout(resolve, milliseconds);
-    });
   }
 }

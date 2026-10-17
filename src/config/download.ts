@@ -48,13 +48,19 @@ export class DownloadManager {
   }
 
   async executeDownload(downloadId: string): Promise<void> {
-    const pendingDownload = this.downloadRepository.findByIdAndStatus(
+    const updateRunningDownload =
+      this.downloadRepository.updateExecutingDownload(downloadId); // specifically introduced this to prevent a race and duplicate download when multiple workers are eventually introduced (only god knows when). since the update happens in the same operation as the check, only one worker can pick the download. cannot tell if this is sufficient rn, will find out eventually anyway, but an attempt nonetheless. the idea is simply that a worker has CLAIMED the download process.
+
+    if (!updateRunningDownload) {
+      return;
+    }
+
+    const runningDownload = this.downloadRepository.findByIdAndStatus(
       downloadId,
-      DownloadStatus.PENDING,
+      DownloadStatus.DOWNLOADING,
     );
 
-    if (!pendingDownload) {
-      console.error(`Error: No pending download with id: ${downloadId}`);
+    if (!runningDownload) {
       return;
     }
 
@@ -62,33 +68,30 @@ export class DownloadManager {
 
     try {
       const downloadPromise = this.downloadEngine.download(
-        pendingDownload.url,
+        runningDownload.url,
         {
-          outputDirectory: pendingDownload.outputDirectory,
-          audioOnly: pendingDownload.audioOnly,
-          playlist: pendingDownload.playlist,
+          outputDirectory: runningDownload.outputDirectory,
+          audioOnly: runningDownload.audioOnly,
+          playlist: runningDownload.playlist,
         },
       );
 
       const processId = this.downloadEngine.getProcessId();
 
-      // once multiple workers is introduced, the status will be updated before the download engine is called so only one worker gets to pick the download from the queue before the ststus gets updated in the db.
-      pendingDownload.status = DownloadStatus.DOWNLOADING;
-
       this.downloadRepository.updateStatusAndProcessId(
-        pendingDownload.id,
-        pendingDownload.status,
+        runningDownload.id,
+        runningDownload.status,
         processId,
       );
 
       await downloadPromise;
 
-      if (this.stoppingDownloadId === pendingDownload.id) {
-        pendingDownload.status = DownloadStatus.PAUSED;
+      if (this.stoppingDownloadId === runningDownload.id) {
+        runningDownload.status = DownloadStatus.PAUSED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          pendingDownload.id,
-          pendingDownload.status,
+          runningDownload.id,
+          runningDownload.status,
           null,
         );
 
@@ -98,15 +101,15 @@ export class DownloadManager {
       }
 
       const currentDownload = this.downloadRepository.findById(
-        pendingDownload.id,
+        runningDownload.id,
       );
 
       if (currentDownload?.status === DownloadStatus.CANCELLED) {
-        pendingDownload.status = DownloadStatus.CANCELLED;
+        runningDownload.status = DownloadStatus.CANCELLED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          pendingDownload.id,
-          pendingDownload.status,
+          runningDownload.id,
+          runningDownload.status,
           null,
         );
 
@@ -114,22 +117,22 @@ export class DownloadManager {
         return;
       }
 
-      pendingDownload.status = DownloadStatus.COMPLETED;
+      runningDownload.status = DownloadStatus.COMPLETED;
 
       this.downloadRepository.updateStatusAndProcessId(
-        pendingDownload.id,
-        pendingDownload.status,
+        runningDownload.id,
+        runningDownload.status,
         null,
       );
 
       this.activeDownloadId = null;
     } catch (error) {
-      if (this.stoppingDownloadId === pendingDownload.id) {
-        pendingDownload.status = DownloadStatus.PAUSED;
+      if (this.stoppingDownloadId === runningDownload.id) {
+        runningDownload.status = DownloadStatus.PAUSED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          pendingDownload.id,
-          pendingDownload.status,
+          runningDownload.id,
+          runningDownload.status,
           null,
         );
 
@@ -139,15 +142,15 @@ export class DownloadManager {
       }
 
       const currentDownload = this.downloadRepository.findById(
-        pendingDownload.id,
+        runningDownload.id,
       );
 
       if (currentDownload?.status === DownloadStatus.CANCELLED) {
-        pendingDownload.status = DownloadStatus.CANCELLED;
+        runningDownload.status = DownloadStatus.CANCELLED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          pendingDownload.id,
-          pendingDownload.status,
+          runningDownload.id,
+          runningDownload.status,
           null,
         );
 
@@ -156,11 +159,11 @@ export class DownloadManager {
       }
 
       if (!this.networkConnected) {
-        pendingDownload.status = DownloadStatus.PAUSED;
+        runningDownload.status = DownloadStatus.PAUSED;
 
         this.downloadRepository.updateStatusAndProcessId(
-          pendingDownload.id,
-          pendingDownload.status,
+          runningDownload.id,
+          runningDownload.status,
           null,
         );
 
@@ -168,11 +171,11 @@ export class DownloadManager {
         return;
       }
 
-      pendingDownload.status = DownloadStatus.FAILED;
+      runningDownload.status = DownloadStatus.FAILED;
 
       this.downloadRepository.updateStatusAndProcessId(
-        pendingDownload.id,
-        pendingDownload.status,
+        runningDownload.id,
+        runningDownload.status,
         null,
       );
 

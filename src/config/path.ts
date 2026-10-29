@@ -5,6 +5,7 @@ import path from "node:path";
 export const LOOTLOG_DIR = path.join(os.homedir(), ".lootlog");
 export const QUEUE_FILE = path.join(LOOTLOG_DIR, "queue.json");
 export const CONFIG_FILE = path.join(LOOTLOG_DIR, "config.json");
+export const WORKER_PID_FILE = path.join(LOOTLOG_DIR, "worker.pid");
 
 export function defaultDownloadDir(): string {
   if (process.platform === "win32") {

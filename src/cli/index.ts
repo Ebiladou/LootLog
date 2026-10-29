@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-
+import { startWorker } from "./commands/start";
+import { stopWorker } from "./commands/stop";
 import { boxCommand } from "./commands/box";
 import { listCommand } from "./commands/list";
 import { resumeCommand } from "./commands/resume";
@@ -13,9 +14,14 @@ import { DownloadRepository } from "../database/repositories/download";
 import { YtDlpEngine } from "../config/yt-dlp";
 import { DownloadManager } from "../config/download";
 import { ConnectivityMonitor } from "../config/network";
+import { DownloadQueue } from "../queue/queue";
+import { DownloadWorker } from "../worker/worker";
+import { describe } from "node:test";
 
 async function main(): Promise<void> {
   const database = createDatabase();
+
+  const downloadQueue = new DownloadQueue();
 
   const downloadRepository = new DownloadRepository(database);
   const downloadEngine = new YtDlpEngine();
@@ -23,6 +29,12 @@ async function main(): Promise<void> {
   const downloadManager = new DownloadManager(
     downloadEngine,
     downloadRepository,
+  );
+
+  const downloadworker = new DownloadWorker(
+    downloadQueue,
+    downloadRepository,
+    downloadManager,
   );
 
   const connectivityMonitor = new ConnectivityMonitor((connected) => {
@@ -37,6 +49,20 @@ async function main(): Promise<void> {
     .name("lootlog")
     .description("A command line YouTube download manager")
     .version("0.1.0");
+
+  program
+    .command("start")
+    .description("Start the Download worker")
+    .action(() => {
+      return startWorker(downloadworker);
+    });
+
+  program
+    .command("stop")
+    .description("Stop the running Download worker")
+    .action(() => {
+      return startWorker(downloadworker);
+    });
 
   program
     .command("box <url>")

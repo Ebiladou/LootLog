@@ -8,8 +8,64 @@ import { ensureDirs, WORKER_PID_FILE } from "../config/path";
 import { DownloadQueue } from "../queue/queue";
 import { DownloadWorker } from "./worker";
 
-function writeWorkerPid(): void {
-  fs.writeFileSync(WORKER_PID_FILE, String(process.pid), "utf-8");
+function isProcessRunning(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ESRCH") {
+      return false;
+    }
+
+    if ((error as NodeJS.ErrnoException).code === "EPERM") {
+      return true;
+    }
+
+    throw error;
+  }
+}
+
+function claimWorkerPid(): void {
+  while (true) {
+    try {
+      fs.writeFileSync(WORKER_PID_FILE, String(process.pid), {
+        encoding: "utf-8",
+        flag: "wx",
+      });
+
+      return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+        throw error;
+      }
+    }
+
+    const storedPid = Number(fs.readFileSync(WORKER_PID_FILE, "utf-8").trim());
+
+    if (Number.isInteger(storedPid) && storedPid > 0) {
+      if (isProcessRunning(storedPid)) {
+        throw new Error(
+          `LootLog worker is already running (PID: ${storedPid}).`,
+        );
+      }
+    }
+
+    const currentPid = Number(fs.readFileSync(WORKER_PID_FILE, "utf-8").trim());
+
+    if (currentPid !== storedPid) {
+      continue;
+    }
+
+    try {
+      fs.unlinkSync(WORKER_PID_FILE);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        continue;
+      }
+
+      throw error;
+    }
+  }
 }
 
 function removeWorkerPid(): void {
@@ -50,6 +106,8 @@ async function main(): Promise<void> {
       downloadManager,
     );
 
+    claimWorkerPid();
+
     let stopping = false;
 
     const shutdown = async (): Promise<void> => {
@@ -79,10 +137,8 @@ async function main(): Promise<void> {
     });
 
     worker.start();
-    writeWorkerPid();
-
-    console.log(`LootLog worker started (PID: ${process.pid})`);
   } catch (error) {
+    removeWorkerPid();
     database.close();
     throw error;
   }

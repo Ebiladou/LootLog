@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { startWorker } from "./commands/start";
-import { stopWorker } from "./commands/stop";
+import { startCommand } from "./commands/start";
+import { statusCommand } from "./commands/status";
+import { stopCommand } from "./commands/stop";
 import { boxCommand } from "./commands/box";
 import { listCommand } from "./commands/list";
 import { resumeCommand } from "./commands/resume";
@@ -53,16 +54,17 @@ async function main(): Promise<void> {
   program
     .command("start")
     .description("Start the Download worker")
-    .action(() => {
-      return startWorker(downloadworker);
-    });
+    .action(startCommand);
 
   program
     .command("stop")
     .description("Stop the running Download worker")
-    .action(() => {
-      return startWorker(downloadworker);
-    });
+    .action(stopCommand);
+
+  program
+    .command("status")
+    .description("Check the background worker status")
+    .action(statusCommand);
 
   program
     .command("box <url>")

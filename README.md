@@ -10,7 +10,13 @@ The idea was to build something smaller that can actually be used before moving 
 
 LootLog does not implement video downloading itself. Instead, it uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) as the download engine. LootLog is only responsible for managing the operation around yt-dlp.
 
-The CLI receives the user's command and options. The `DownloadManager` coordinates the download operation and controls its lifecycle. `yt-dlp` performs the actual YouTube download. `SQLite` stores information about downloads so that LootLog does not have to rely entirely on the memory of the currently running process.
+The CLI receives the user's command and options. The `DownloadManager` coordinates download execution and controls its lifecycle. The `yt-dlp` engine communicates with the external yt-dlp process and performs the actual downloads.
+
+SQLite provides persistent storage for download records and their statuses. This allows download information to survive after the CLI process exits.
+
+A separate background worker is responsible for processing pending downloads. It continuously checks the database for pending work and executes downloads independently of the terminal session that created them.
+
+The worker runs as a separate process, allowing users to interact with LootLog from different terminal sessions without keeping the original CLI process alive.
 
 ## Project Structure
 
@@ -25,18 +31,25 @@ src/
 │       ├── cancel.ts
 │       └── info.ts
 │
-├── config/
-│   ├── download.ts
-    └── network.ts
-    └── path.ts
+├── core/
+│   ├── config.ts
+│   └── download.ts
+│   └── network.ts
+│   └── path.ts
 │   └── yt-dlp.ts
 │
-└── database/
-    ├── db.ts
-    ├── models/
-    │   └── download.ts
-    └── repositories/
-        └── download.ts
+├── database/
+│   ├── db.ts
+│   ├── models/
+│   │   └── download.ts
+│   └── repositories/
+│       └── download.ts
+│
+└── worker/
+│   ├── index.ts
+│   ├── process.ts
+│   ├── queue.ts
+│   └── worker.ts
 
 ```
 
@@ -59,8 +72,25 @@ src/
 - Automatic pausing downloads when network connectivity is lost
 - Resuming paused downloads
 - Cancelling active downloads
+- Optional browser cookie extraction through yt-dlp.
 
 ## Feature Commands
+
+### Managing the Background Worker
+
+Before jumping to download commands, the background worker must be running for pending downloads to be processed.
+
+Start the worker:
+
+`npx lootlog start`
+
+Stop the worker:
+
+`npx lootlog stop`
+
+Check whether the worker is running:
+
+`npx lootlog status`
 
 ### Video downloads
 
@@ -142,6 +172,38 @@ The info command is intended to display detailed information about a specific do
 lootlog info <id>
 ```
 
+### Configuration
+
+LootLog maintains a global configuration file under `~/.lootlog/config.json`. The file is created automatically with default settings when it does not exist. One of the configurations here is the Browser cookies, which are optional and disabled by default.
+
+YouTube may sometimes restrict downloads and require authentication. If this happens, users can configure LootLog to use cookies from a browser where they are already signed in to YouTube. For instance:
+
+`npx lootlog config set cookies chrome`
+
+Other supported browsers include:
+
+- Chrome
+- Chromium
+- Firefox
+- Edge
+- Opera
+- Safari
+
+The selected browser is stored in the global configuration. LootLog passes the browser preference to yt-dlp, which handles cookie extraction and authentication.
+
+To view the current cookie configuration:
+
+`npx lootlog config get cookies`
+
+To disable browser cookies:
+
+`npx lootlog config set cookies off`
+
+After changing the setting, restart the background worker for the updated configuration to take effect:
+
+`npx lootlog stop`
+`npx lootlog start`
+
 ### Network Interruption (Pause)
 
 LootLog has a connectivity monitor that periodically checks whether the application can reach the network. When connectivity is lost, LootLog can stop the active yt-dlp process and mark the download as PAUSED.
@@ -160,6 +222,7 @@ LootLog is currently **not packaged as an npm package**. It is intended to be cl
 - npm
 - yt-dlp
 - FFmpeg
+- Deno
 
 ### Clone the repository
 
@@ -229,13 +292,23 @@ The database will be recreated the next time LootLog starts. Conviniet than migr
 
 LootLog is currently in active development, subject to my time and mental health status.
 
-The basic download flow, persistence, status tracking, playlist support, audio downloads, network interruption handling, and resume behavior are working.
-
-The next stage is improving the architecture around long running downloads so that commands executed from separate terminal sessions can communicate with the process responsible for an active download.
-
 There are a bunch of things to fix, really, so the project will continue to evolve as the underlying concepts become clearer.
 
 ## CLI Reference
+
+### Worker commands
+
+Start the background worker
+
+`lootlog start`
+
+Stop the background worker
+
+`lootlog stop`
+
+Check worker status
+
+`lootlog status`
 
 ### Download a YouTube video.
 

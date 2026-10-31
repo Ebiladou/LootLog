@@ -6,15 +6,33 @@ export interface DownloadOptions {
   playlist?: boolean;
 }
 
+export interface YtDlpOptions {
+  cookiesFromBrowser?: string;
+}
+
 export class YtDlpEngine {
   private process: ChildProcess | null = null;
   private stopped = false;
 
+  constructor(private readonly options: YtDlpOptions = {}) {}
+
+  private getConfigArguments(): string[] {
+    if (!this.options.cookiesFromBrowser) {
+      return [];
+    }
+
+    return ["--cookies-from-browser", this.options.cookiesFromBrowser];
+  }
+
   async getTitle(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const process = spawn("yt-dlp", ["--get-title", "--no-playlist", url], {
-        stdio: ["ignore", "pipe", "inherit"],
-      });
+      const process = spawn(
+        "yt-dlp",
+        [...this.getConfigArguments(), "--get-title", "--no-playlist", url],
+        {
+          stdio: ["ignore", "pipe", "inherit"],
+        },
+      );
 
       let title = "";
 
@@ -39,6 +57,7 @@ export class YtDlpEngine {
 
   async download(url: string, options: DownloadOptions): Promise<void> {
     const argumentsList = [
+      ...this.getConfigArguments(),
       "--continue",
       options.playlist ? "--yes-playlist" : "--no-playlist",
       "-P",

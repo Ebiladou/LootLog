@@ -48,7 +48,7 @@ export class DownloadRepository {
     });
   }
 
-  findById(id: string): Download | null {
+  findById(id: string): Download | undefined {
     const statement = this.database.prepare(`
       SELECT
         id,
@@ -66,11 +66,7 @@ export class DownloadRepository {
 
     const row = statement.get(id) as DownloadRow | undefined;
 
-    if (!row) {
-      return null;
-    }
-
-    return this.toDownload(row);
+    return row ? this.toDownload(row) : undefined;
   }
 
   findAll(): Download[] {
@@ -151,6 +147,22 @@ export class DownloadRepository {
   `);
 
     statement.run(status, processId, id);
+  }
+
+  updateExecutingDownload(id: string): boolean {
+    const statement = this.database.prepare(`
+      UPDATE downloads
+      SET status = ?
+      WHERE id = ? AND status = ?
+    `);
+
+    const result = statement.run(
+      DownloadStatus.DOWNLOADING,
+      id,
+      DownloadStatus.PENDING,
+    );
+
+    return result.changes === 1;
   }
 
   private toDownload(row: DownloadRow): Download {

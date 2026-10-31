@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "worker": "node dist/worker/index.js",
     "typecheck": "tsc --noEmit",
     "format": "prettier . --write",
     "format:check": "prettier . --check"

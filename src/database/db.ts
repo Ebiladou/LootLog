@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 
-import { LOOTLOG_DIR } from "../config/path";
+import { LOOTLOG_DIR } from "../core/path";
 
 const DATABASE_FILE = path.join(LOOTLOG_DIR, "database.sqlite");
 

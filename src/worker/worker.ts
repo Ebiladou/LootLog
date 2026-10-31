@@ -1,6 +1,6 @@
 import { DownloadStatus } from "../database/models/download";
-import { DownloadManager } from "../config/download";
-import { DownloadQueue } from "../queue/queue";
+import { DownloadManager } from "../core/download";
+import { DownloadQueue } from "./queue";
 import { DownloadRepository } from "../database/repositories/download";
 
 export class DownloadWorker {

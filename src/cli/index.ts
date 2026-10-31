@@ -15,14 +15,9 @@ import { DownloadRepository } from "../database/repositories/download";
 import { YtDlpEngine } from "../config/yt-dlp";
 import { DownloadManager } from "../config/download";
 import { ConnectivityMonitor } from "../config/network";
-import { DownloadQueue } from "../queue/queue";
-import { DownloadWorker } from "../worker/worker";
-import { describe } from "node:test";
 
 async function main(): Promise<void> {
   const database = createDatabase();
-
-  const downloadQueue = new DownloadQueue();
 
   const downloadRepository = new DownloadRepository(database);
   const downloadEngine = new YtDlpEngine();
@@ -30,12 +25,6 @@ async function main(): Promise<void> {
   const downloadManager = new DownloadManager(
     downloadEngine,
     downloadRepository,
-  );
-
-  const downloadworker = new DownloadWorker(
-    downloadQueue,
-    downloadRepository,
-    downloadManager,
   );
 
   const connectivityMonitor = new ConnectivityMonitor((connected) => {

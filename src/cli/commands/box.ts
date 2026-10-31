@@ -32,9 +32,6 @@ export async function boxCommand(
     return;
   }
 
-  console.log(`URL: ${url}`);
-  console.log(`Download directory: ${downloadDirectory}`);
-
   if (options.audio) {
     console.log("Mode: audio");
   }
@@ -44,14 +41,18 @@ export async function boxCommand(
   }
 
   try {
-    await downloadManager.download({
+    const download = await downloadManager.download({
       url,
       outputDirectory: downloadDirectory,
       audioOnly: options.audio,
       playlist: options.playlist,
     });
+
+    console.log(`Download queued successfully.`);
+    console.log(`Name: ${download.name}`);
+
   } catch (error) {
-    console.error(`Error downloading file: ${error}`);
+    console.error(`Error processing download: ${error}`);
     process.exitCode = 1;
   }
 }

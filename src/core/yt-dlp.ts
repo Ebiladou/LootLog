@@ -1,0 +1,119 @@
+import { ChildProcess, spawn } from "node:child_process";
+
+export interface DownloadOptions {
+  outputDirectory: string;
+  audioOnly?: boolean;
+  playlist?: boolean;
+}
+
+export interface YtDlpOptions {
+  cookiesFromBrowser?: string;
+}
+
+export class YtDlpEngine {
+  private process: ChildProcess | null = null;
+  private stopped = false;
+
+  constructor(private readonly options: YtDlpOptions = {}) {}
+
+  private getConfigArguments(): string[] {
+    if (!this.options.cookiesFromBrowser) {
+      return [];
+    }
+
+    return ["--cookies-from-browser", this.options.cookiesFromBrowser];
+  }
+
+  async getTitle(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const process = spawn(
+        "yt-dlp",
+        [...this.getConfigArguments(), "--get-title", "--no-playlist", url],
+        {
+          stdio: ["ignore", "pipe", "inherit"],
+        },
+      );
+
+      let title = "";
+
+      process.stdout?.on("data", (data) => {
+        title += data.toString();
+      });
+
+      process.on("error", (error) => {
+        reject(error);
+      });
+
+      process.on("close", (exitCode) => {
+        if (exitCode !== 0) {
+          reject(new Error(`yt-dlp exited with code ${exitCode}`));
+          return;
+        }
+
+        resolve(title.trim());
+      });
+    });
+  }
+
+  async download(url: string, options: DownloadOptions): Promise<void> {
+    const argumentsList = [
+      ...this.getConfigArguments(),
+      "--continue",
+      options.playlist ? "--yes-playlist" : "--no-playlist",
+      "-P",
+      options.outputDirectory,
+    ];
+
+    if (options.audioOnly) {
+      argumentsList.push("-x", "--audio-format", "mp3");
+    }
+
+    argumentsList.push(url);
+
+    await this.run(argumentsList);
+  }
+
+  getProcessId(): number | null {
+    return this.process?.pid ?? null;
+  }
+
+  stop(): void {
+    if (this.process === null) {
+      return;
+    }
+
+    this.stopped = true;
+    this.process.kill("SIGINT");
+  }
+
+  private run(argumentsList: string[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.stopped = false;
+
+      this.process = spawn("yt-dlp", argumentsList, {
+        stdio: "inherit",
+      });
+
+      this.process.on("error", (error) => {
+        this.process = null;
+        reject(error);
+      });
+
+      this.process.on("close", (exitCode) => {
+        this.process = null;
+
+        if (this.stopped) {
+          resolve();
+          return;
+        }
+
+        if (exitCode === 0) {
+          resolve();
+          return;
+        }
+
+        reject(new Error(`yt-dlp exited with code ${exitCode}`));
+      });
+    });
+  }
+}

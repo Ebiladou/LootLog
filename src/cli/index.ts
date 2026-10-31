@@ -9,29 +9,31 @@ import { listCommand } from "./commands/list";
 import { resumeCommand } from "./commands/resume";
 import { cancelCommand } from "./commands/cancel";
 import { infoCommand } from "./commands/info";
-
+import { setConfigCommand, getConfigCommand } from "./commands/config";
 import { createDatabase } from "../database/db";
 import { DownloadRepository } from "../database/repositories/download";
-import { YtDlpEngine } from "../config/yt-dlp";
-import { DownloadManager } from "../config/download";
-import { ConnectivityMonitor } from "../config/network";
+import { YtDlpEngine } from "../core/yt-dlp";
+import { DownloadManager } from "../core/download";
+import { loadConfig } from "../core/config";
 
 async function main(): Promise<void> {
   const database = createDatabase();
 
   const downloadRepository = new DownloadRepository(database);
-  const downloadEngine = new YtDlpEngine();
+
+  const config = loadConfig();
+
+  const downloadEngine = new YtDlpEngine({
+    cookiesFromBrowser:
+      config.cookies.enabled && config.cookies.browser
+        ? config.cookies.browser
+        : undefined,
+  });
 
   const downloadManager = new DownloadManager(
     downloadEngine,
     downloadRepository,
   );
-
-  const connectivityMonitor = new ConnectivityMonitor((connected) => {
-    downloadManager.setNetworkConnected(connected);
-  });
-
-  connectivityMonitor.start();
 
   const program = new Command();
 
@@ -94,9 +96,25 @@ async function main(): Promise<void> {
       return infoCommand(id, downloadRepository);
     });
 
-  await program.parseAsync();
+  const configCommand = program
+    .command("config")
+    .description("Manage LootLog configuration");
 
-  database.close();
+  configCommand
+    .command("set <key> <value>")
+    .description("Update a configuration setting")
+    .action(setConfigCommand);
+
+  configCommand
+    .command("get <key>")
+    .description("Display a configuration setting")
+    .action(getConfigCommand);
+
+  try {
+    await program.parseAsync();
+  } finally {
+    database.close();
+  }
 }
 
 main();

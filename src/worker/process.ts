@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-import { WORKER_PID_FILE } from "../config/path";
+import { WORKER_PID_FILE } from "../core/path";
 
 export function isProcessRunning(pid: number): boolean {
   try {

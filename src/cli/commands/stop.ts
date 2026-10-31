@@ -1,4 +1,3 @@
-
 import { getWorkerPid, isProcessRunning } from "../../worker/process";
 
 export function stopCommand(): void {

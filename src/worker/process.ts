@@ -1,4 +1,3 @@
-
 import fs from "node:fs";
 
 import { WORKER_PID_FILE } from "../config/path";
@@ -54,9 +53,7 @@ export function claimWorkerPid(): void {
     const storedPid = getWorkerPid();
 
     if (storedPid !== null && isProcessRunning(storedPid)) {
-      throw new Error(
-        `LootLog worker is already running (PID: ${storedPid}).`,
-      );
+      throw new Error(`LootLog worker is already running (PID: ${storedPid}).`);
     }
 
     const currentPid = getWorkerPid();

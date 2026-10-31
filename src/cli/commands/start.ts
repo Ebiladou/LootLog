@@ -1,4 +1,3 @@
-
 import { spawn } from "node:child_process";
 import path from "node:path";
 
@@ -12,10 +11,7 @@ export function startCommand(): void {
     return;
   }
 
-  const workerPath = path.resolve(
-    __dirname,
-    "../../worker/index.js",
-  );
+  const workerPath = path.resolve(__dirname, "../../worker/index.js");
 
   const child = spawn(process.execPath, [workerPath], {
     detached: true,

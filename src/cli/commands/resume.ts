@@ -1,6 +1,6 @@
 import { DownloadRepository } from "../../database/repositories/download";
 import { DownloadStatus } from "../../database/models/download";
-import { DownloadManager } from "../../config/download";
+import { DownloadManager } from "../../core/download";
 
 export async function resumeCommand(
   id: string,

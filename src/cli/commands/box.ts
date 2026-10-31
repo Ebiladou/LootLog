@@ -1,6 +1,6 @@
 import path from "node:path";
-import { defaultDownloadDir, ensureDirs } from "../../config/path";
-import { DownloadManager } from "../../config/download";
+import { defaultDownloadDir, ensureDirs } from "../../core/path";
+import { DownloadManager } from "../../core/download";
 
 interface BoxOptions {
   output?: string;

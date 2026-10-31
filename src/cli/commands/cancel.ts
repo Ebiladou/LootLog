@@ -1,4 +1,4 @@
-import { DownloadManager } from "../../config/download";
+import { DownloadManager } from "../../core/download";
 
 export async function cancelCommand(
   id: string,
